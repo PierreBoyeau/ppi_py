@@ -1127,7 +1127,7 @@ def ppi_logistic_sigma(
             inv_hessian,
             clip=True,
         )
-        return ppi_logistic_ci(
+        return ppi_logistic_sigma(
             X,
             Y,
             Yhat,
