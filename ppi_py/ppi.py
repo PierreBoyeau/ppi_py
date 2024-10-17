@@ -1068,6 +1068,86 @@ def ppi_logistic_ci(
         alpha=alpha,
         alternative=alternative,
     )
+    
+  
+def ppi_logistic_sigma(
+    X,
+    Y,
+    Yhat,
+    X_unlabeled,
+    Yhat_unlabeled,
+    alpha=0.1,
+    alternative="two-sided",
+    lam=None,
+    coord=None,
+    optimizer_options=None,
+    w=None,
+    w_unlabeled=None,
+):
+    n = Y.shape[0]
+    d = X.shape[1]
+    N = Yhat_unlabeled.shape[0]
+    w = np.ones(n) if w is None else w / w.sum() * n
+    w_unlabeled = (
+        np.ones(N)
+        if w_unlabeled is None
+        else w_unlabeled / w_unlabeled.sum() * N
+    )
+    use_unlabeled = lam != 0
+
+    ppi_pointest = ppi_logistic_pointestimate(
+        X,
+        Y,
+        Yhat,
+        X_unlabeled,
+        Yhat_unlabeled,
+        optimizer_options=optimizer_options,
+        lam=lam,
+        coord=coord,
+        w=w,
+        w_unlabeled=w_unlabeled,
+    )
+
+    grads, grads_hat, grads_hat_unlabeled, inv_hessian = _logistic_get_stats(
+        ppi_pointest,
+        X,
+        Y,
+        Yhat,
+        X_unlabeled,
+        Yhat_unlabeled,
+        w,
+        w_unlabeled,
+        use_unlabeled=use_unlabeled,
+    )
+    if lam is None:
+        lam = _calc_lam_glm(
+            grads,
+            grads_hat,
+            grads_hat_unlabeled,
+            inv_hessian,
+            clip=True,
+        )
+        return ppi_logistic_ci(
+            X,
+            Y,
+            Yhat,
+            X_unlabeled,
+            Yhat_unlabeled,
+            alpha=alpha,
+            optimizer_options=optimizer_options,
+            alternative=alternative,
+            lam=lam,
+            coord=coord,
+            w=w,
+            w_unlabeled=w_unlabeled,
+        )
+
+    var_unlabeled = np.cov(lam * grads_hat_unlabeled.T).reshape(d, d)
+
+    var = np.cov(grads.T - lam * grads_hat.T).reshape(d, d)
+
+    Sigma_hat = inv_hessian @ (n / N * var_unlabeled + var) @ inv_hessian
+    return Sigma_hat
 
 
 def ppi_poisson_pointestimate(
