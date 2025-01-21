@@ -868,6 +868,7 @@ def ppi_logistic_pointestimate(
             grads_hat,
             grads_hat_unlabeled,
             inv_hessian,
+            coord=coord,
             clip=True,
         )
         return ppi_logistic_pointestimate(
@@ -1039,6 +1040,7 @@ def ppi_logistic_ci(
             grads_hat,
             grads_hat_unlabeled,
             inv_hessian,
+            coord=coord,
             clip=True,
         )
         return ppi_logistic_ci(
@@ -1125,6 +1127,7 @@ def ppi_logistic_sigma(
             grads_hat,
             grads_hat_unlabeled,
             inv_hessian,
+            coord=coord,
             clip=True,
         )
         return ppi_logistic_sigma(
