@@ -963,6 +963,51 @@ def _logistic_get_stats(
     return grads, grads_hat, grads_hat_unlabeled, inv_hessian
 
 
+def ppi_logistic_lambda_optim(
+    X,
+    Y,
+    Yhat,
+    X_unlabeled,
+    Yhat_unlabeled,
+    coord=None,
+    w=None,
+    w_unlabeled=None,
+    optimizer_options=None,
+):
+    ppi_pointest = ppi_logistic_pointestimate(
+        X,
+        Y,
+        Yhat,
+        X_unlabeled,
+        Yhat_unlabeled,
+        optimizer_options=optimizer_options,
+        lam=None,
+        coord=coord,
+        w=w,
+        w_unlabeled=w_unlabeled,
+    )
+    grads, grads_hat, grads_hat_unlabeled, inv_hessian = _logistic_get_stats(
+        ppi_pointest,
+        X,
+        Y,
+        Yhat,
+        X_unlabeled,
+        Yhat_unlabeled,
+        w,
+        w_unlabeled,
+        use_unlabeled=True,
+    )
+    lam = _calc_lam_glm(
+        grads,
+        grads_hat,
+        grads_hat_unlabeled,
+        inv_hessian,
+        coord=coord,
+        clip=True,
+    )
+    return lam
+
+
 def ppi_logistic_ci(
     X,
     Y,
@@ -1070,8 +1115,8 @@ def ppi_logistic_ci(
         alpha=alpha,
         alternative=alternative,
     )
-    
-  
+
+
 def ppi_logistic_sigma(
     X,
     Y,

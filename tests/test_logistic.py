@@ -64,6 +64,30 @@ def test_ppi_logistic_pointestimate_recovers():
     assert np.linalg.norm(beta_ppi_pointestimate - beta) < 0.2
 
 
+def test_ppi_logistic_elementwise_optim():
+    # Make a synthetic regression problem
+    n = 10000
+    N = 100000
+    d = 3
+    X = np.random.randn(n, d)
+    beta = np.random.randn(d)
+    Y = np.random.binomial(1, expit(X.dot(beta)))
+    Yhat = expit(X.dot(beta))
+    # Make a synthetic unlabeled data set with predictions Yhat
+    X_unlabeled = np.random.randn(N, d)
+    Yhat_unlabeled = expit(X_unlabeled.dot(beta))
+    # Compute the point estimate
+    beta_ppi_pointestimate = ppi_logistic_pointestimate(
+        X,
+        Y,
+        Yhat,
+        X_unlabeled,
+        Yhat_unlabeled,
+        optimizer_options={"gtol": 1e-3},
+        coord=2,
+    )
+
+
 def ppi_logistic_ci_subtest(i, alphas, n=1000, N=10000, d=1, epsilon=0.02):
     includeds = np.zeros(len(alphas))
     # Make a synthetic regression problem
