@@ -224,6 +224,78 @@ def ppi_mean_ci(
     )
 
 
+def ppi_mean_sigma(
+    Y,
+    Yhat,
+    Yhat_unlabeled,
+    alpha=0.1,
+    alternative="two-sided",
+    lam=None,
+    coord=None,
+    w=None,
+    w_unlabeled=None,
+    lam_optim_mode="overall",
+):
+    n = Y.shape[0]
+    N = Yhat_unlabeled.shape[0]
+    d = Y.shape[1] if len(Y.shape) > 1 else 1
+
+    Y = reshape_to_2d(Y)
+    Yhat = reshape_to_2d(Yhat)
+    Yhat_unlabeled = reshape_to_2d(Yhat_unlabeled)
+
+    w = construct_weight_vector(n, w, vectorized=True)
+    w_unlabeled = construct_weight_vector(N, w_unlabeled, vectorized=True)
+
+    if lam is None:
+        ppi_pointest = ppi_mean_pointestimate(
+            Y,
+            Yhat,
+            Yhat_unlabeled,
+            lam=1,
+            w=w,
+            w_unlabeled=w_unlabeled,
+        )
+        grads = w * (Y - ppi_pointest)
+        grads_hat = w * (Yhat - ppi_pointest)
+        grads_hat_unlabeled = w_unlabeled * (Yhat_unlabeled - ppi_pointest)
+        inv_hessian = np.eye(d)
+        lam = _calc_lam_glm(
+            grads,
+            grads_hat,
+            grads_hat_unlabeled,
+            inv_hessian,
+            coord=None,
+            clip=True,
+            optim_mode=lam_optim_mode,
+        )
+        return ppi_mean_sigma(
+            Y,
+            Yhat,
+            Yhat_unlabeled,
+            alpha=alpha,
+            lam=lam,
+            coord=coord,
+            w=w,
+            w_unlabeled=w_unlabeled,
+        )
+
+    ppi_pointest = ppi_mean_pointestimate(
+        Y,
+        Yhat,
+        Yhat_unlabeled,
+        lam=lam,
+        coord=coord,
+        w=w,
+        w_unlabeled=w_unlabeled,
+    )
+
+    imputed_std = (w_unlabeled * (lam * Yhat_unlabeled)).std(0) / np.sqrt(N)
+    rectifier_std = (w * (Y - lam * Yhat)).std(0) / np.sqrt(n)
+
+    return imputed_std**2 + rectifier_std**2
+
+
 def ppi_mean_pval(
     Y,
     Yhat,
